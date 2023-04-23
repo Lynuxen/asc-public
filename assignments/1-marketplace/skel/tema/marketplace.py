@@ -5,6 +5,7 @@ Computer Systems Architecture Course
 Assignment 1
 March 2021
 """
+import uuid
 
 
 class Marketplace:
@@ -12,6 +13,7 @@ class Marketplace:
     Class that represents the Marketplace. It's the central part of the implementation.
     The producers and consumers use its methods concurrently.
     """
+
     def __init__(self, queue_size_per_producer):
         """
         Constructor
@@ -19,13 +21,15 @@ class Marketplace:
         :type queue_size_per_producer: Int
         :param queue_size_per_producer: the maximum size of a queue associated with each producer
         """
+
         pass
 
     def register_producer(self):
         """
         Returns an id for the producer that calls this.
         """
-        pass
+
+        return uuid.uuid4()
 
     def publish(self, producer_id, product):
         """
