@@ -23,7 +23,7 @@ class Consumer(Thread):
 
         :type marketplace: Marketplace
         :param marketplace: a reference to the marketplace
-
+        # setting up new branch
         :type retry_wait_time: Time
         :param retry_wait_time: the number of seconds that a producer must wait
         until the Marketplace becomes available
