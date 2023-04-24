@@ -6,12 +6,16 @@ Assignment 1
 March 2021
 """
 
+import uuid
+import hashlib
+from tema.prodinfo import ProdInfo
 
 class Marketplace:
     """
     Class that represents the Marketplace. It's the central part of the implementation.
     The producers and consumers use its methods concurrently.
     """
+
     def __init__(self, queue_size_per_producer):
         """
         Constructor
@@ -19,13 +23,18 @@ class Marketplace:
         :type queue_size_per_producer: Int
         :param queue_size_per_producer: the maximum size of a queue associated with each producer
         """
-        pass
+
+        self.queue_size_per_producer = queue_size_per_producer
+        self.consumers = {}
+        self.producers = {}
 
     def register_producer(self):
         """
         Returns an id for the producer that calls this.
         """
-        pass
+        producer_id = str(uuid.uuid4())
+        self.producers[producer_id] = []
+        return producer_id
 
     def publish(self, producer_id, product):
         """
@@ -39,7 +48,11 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-        pass
+        if len(self.producers[producer_id]) >= self.queue_size_per_producer:
+            return False
+
+        self.producers[producer_id].append(product)
+        return True
 
     def new_cart(self):
         """
@@ -47,7 +60,13 @@ class Marketplace:
 
         :returns an int representing the cart_id
         """
-        pass
+        random_cart_id = str(uuid.uuid4())
+        hashed_cart_id = hashlib.sha256(random_cart_id.encode())
+        cut_down_hex = hashed_cart_id.hexdigest()[:8]
+        cart_id = int(cut_down_hex, 16)
+        cart_id = cart_id % 10000
+        self.consumers[cart_id] = []
+        return cart_id
 
     def add_to_cart(self, cart_id, product):
         """
@@ -61,7 +80,15 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-        pass
+
+
+        for producer_id, products in self.producers.items():
+            if product in products:
+                products.remove(product)
+                self.consumers[cart_id].append(ProdInfo(product, producer_id))
+                return True
+
+        return False
 
     def remove_from_cart(self, cart_id, product):
         """
@@ -73,7 +100,11 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
-        pass
+        for prod in self.consumers[cart_id]:
+            if prod.product == product:
+                self.producers[prod.producer_id].append(product)
+                self.consumers[cart_id].remove(prod)
+                break
 
     def place_order(self, cart_id):
         """
@@ -82,4 +113,4 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
-        pass
+        return self.consumers[cart_id]
