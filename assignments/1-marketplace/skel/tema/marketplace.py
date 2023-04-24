@@ -5,8 +5,10 @@ Computer Systems Architecture Course
 Assignment 1
 March 2021
 """
+
 import uuid
 import hashlib
+from productinformation import ProdInfo
 
 class Marketplace:
     """
@@ -25,9 +27,6 @@ class Marketplace:
         self.queue_size_per_producer = queue_size_per_producer
         self.consumers = {}
         self.producers = {}
-        self.available_products = []
-
-        pass
 
     def register_producer(self):
         """
@@ -84,7 +83,7 @@ class Marketplace:
         for producer_id in self.producers:
             if product in self.producers[producer_id]:
                 self.producers[producer_id].remove(product)
-                self.consumers[cart_id].append(product)
+                self.consumers[cart_id].append(ProdInfo(product, producer_id))
                 return True
             
         return False
@@ -99,8 +98,10 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
-        
-        pass
+        for prod in self.consumers[cart_id]:
+            if prod.product == product:
+                self.producers[prod.producer_id].append(product)
+                self.consumers[cart_id].remove(prod)
 
     def place_order(self, cart_id):
         """
