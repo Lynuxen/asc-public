@@ -8,7 +8,7 @@ March 2021
 
 import uuid
 import hashlib
-from productinformation import ProdInfo
+from tema.prodinfo import ProdInfo
 
 class Marketplace:
     """
@@ -32,9 +32,9 @@ class Marketplace:
         """
         Returns an id for the producer that calls this.
         """
-        id = str(uuid.uuid4())
-        self.producers[id] = []
-        return id
+        producer_id = str(uuid.uuid4())
+        self.producers[producer_id] = []
+        return producer_id
 
     def publish(self, producer_id, product):
         """
@@ -48,9 +48,9 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-        if self.producers[producer_id].len() >= self.queue_size_per_producer:
+        if len(self.producers[producer_id]) >= self.queue_size_per_producer:
             return False
-        
+
         self.producers[producer_id].append(product)
         return True
 
@@ -80,12 +80,14 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-        for producer_id in self.producers:
-            if product in self.producers[producer_id]:
-                self.producers[producer_id].remove(product)
+
+
+        for producer_id, products in self.producers.items():
+            if product in products:
+                products.remove(product)
                 self.consumers[cart_id].append(ProdInfo(product, producer_id))
                 return True
-            
+
         return False
 
     def remove_from_cart(self, cart_id, product):
@@ -102,6 +104,7 @@ class Marketplace:
             if prod.product == product:
                 self.producers[prod.producer_id].append(product)
                 self.consumers[cart_id].remove(prod)
+                break
 
     def place_order(self, cart_id):
         """
