@@ -8,7 +8,7 @@ March 2021
 
 import uuid
 import hashlib
-from tema.prodinfo import ProdInfo
+from threading import Lock, currentThread
 
 class Marketplace:
     """
@@ -25,15 +25,22 @@ class Marketplace:
         """
 
         self.queue_size_per_producer = queue_size_per_producer
+        self.queue = []
         self.consumers = {}
         self.producers = {}
+
+        self.mutex = Lock()
+        self.prod_mutex = Lock()
+        self.cart_mutex = Lock()
+        self.print_mutex = Lock()
 
     def register_producer(self):
         """
         Returns an id for the producer that calls this.
         """
-        producer_id = str(uuid.uuid4())
-        self.producers[producer_id] = []
+        with self.prod_mutex:
+            producer_id = str(uuid.uuid4())
+            self.producers[producer_id] = 0
         return producer_id
 
     def publish(self, producer_id, product):
@@ -48,11 +55,12 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again.
         """
-        if len(self.producers[producer_id]) >= self.queue_size_per_producer:
-            return False
+        if self.producers[producer_id] < self.queue_size_per_producer:
+            self.queue.append((product, producer_id))
+            self.producers[producer_id] += 1
+            return True
 
-        self.producers[producer_id].append(product)
-        return True
+        return False
 
     def new_cart(self):
         """
@@ -80,13 +88,14 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-
-
-        for producer_id, products in self.producers.items():
-            if product in products:
-                products.remove(product)
-                self.consumers[cart_id].append(ProdInfo(product, producer_id))
-                return True
+        
+        first_product = next((x for x in self.queue if x[0] == product), None)
+        if isinstance(first_product, tuple):
+            self.consumers[cart_id].append(first_product)
+            with self.cart_mutex:
+                self.queue.remove(first_product)
+                self.producers[first_product[1]] -= 1
+            return True
 
         return False
 
@@ -100,11 +109,14 @@ class Marketplace:
         :type product: Product
         :param product: the product to remove from cart
         """
-        for prod in self.consumers[cart_id]:
-            if prod.product == product:
-                self.producers[prod.producer_id].append(product)
-                self.consumers[cart_id].remove(prod)
-                break
+        
+        first_product = next(
+                (x for x in self.consumers[cart_id] if x[0] == product), None)
+        if isinstance(first_product, tuple):
+            self.queue.append(first_product)
+            with self.cart_mutex:
+                self.consumers[cart_id].remove(first_product)
+                self.producers[first_product[1]] += 1
 
     def place_order(self, cart_id):
         """
@@ -113,4 +125,9 @@ class Marketplace:
         :type cart_id: Int
         :param cart_id: id cart
         """
+        
+        for product in self.consumers[cart_id]:
+            with self.print_mutex:
+                print(
+                    f"{currentThread().getName()} bought {product[0]}")
         return self.consumers[cart_id]

@@ -37,7 +37,6 @@ class Producer(Thread):
         self.products = products
         self.marketplace = marketplace
         self.republish_wait_time = republish_wait_time
-        self.thread_name = kwargs["name"]
 
         self.producer_id = self.marketplace.register_producer()
 
