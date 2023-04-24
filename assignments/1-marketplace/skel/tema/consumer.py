@@ -33,9 +33,11 @@ class Consumer(Thread):
         """
         Thread.__init__(self, **kwargs)
         
-        self.carts = carts
+        self.cart_operations = carts
         self.marketplace = marketplace
         self.retry_wait_time = retry_wait_time
+
+        self.registered_cart = self.marketplace.new_cart()
 
     def run(self):
         pass
