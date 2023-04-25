@@ -6,7 +6,7 @@ Assignment 1
 March 2021
 """
 
-from threading import Thread, Lock
+from threading import Thread
 from time import sleep
 
 class Consumer(Thread):
