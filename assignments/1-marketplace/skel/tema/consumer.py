@@ -35,9 +35,8 @@ class Consumer(Thread):
         self.carts = carts
         self.marketplace = marketplace
         self.retry_wait_time = retry_wait_time
-        self.thread_name = kwargs["name"]
-        self.mutex = Lock()
 
+        
     def run(self):
         for cart in self.carts:
             cart_id = self.marketplace.new_cart()

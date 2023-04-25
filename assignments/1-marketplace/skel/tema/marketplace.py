@@ -13,8 +13,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from threading import Lock, currentThread
-from tema.product import Coffee, Tea
-
+from .product import Coffee, Tea
 
 class Marketplace:
     """
@@ -90,10 +89,14 @@ class Marketplace:
         """
         self.logger.info("Generating a new cart_id.")
         random_cart_id = str(uuid.uuid4())
+        # hash the uuid string
         hashed_cart_id = hashlib.sha256(random_cart_id.encode())
+        # convert it into a hexadecimal string and take the first 8 characters
         cut_down_hex = hashed_cart_id.hexdigest()[:8]
+        # convert it to an int
         cart_id = int(cut_down_hex, 16)
-        cart_id = cart_id % 10000
+        # limit it to 999,999
+        cart_id = cart_id % 1000000
         self.consumers[cart_id] = []
         self.logger.info("New cart_id:[%d] generated", cart_id)
         return cart_id
@@ -110,16 +113,15 @@ class Marketplace:
 
         :returns True or False. If the caller receives False, it should wait and then try again
         """
-
-        first_product = next(
-            (x for x in self.queue if x[0] == product), None)
-        if isinstance(first_product, tuple):
-            self.consumers[cart_id].append(first_product)
-            self.queue.remove(first_product)
-            with self.cart_mutex:
+        with self.cart_mutex:
+            first_product = next(
+                (x for x in self.queue if x[0] == product), None)
+            if isinstance(first_product, tuple):
+                self.consumers[cart_id].append(first_product)
+                self.queue.remove(first_product)
                 self.producers[first_product[1]] -= 1
-            self.logger.info("%s added to cart_id:[%d]", product.name, cart_id)
-            return True
+                self.logger.info("%s added to cart_id:[%d]", product.name, cart_id)
+                return True
 
         self.logger.info(
             "%s not found for cart_id:[%d]", product.name, cart_id)
